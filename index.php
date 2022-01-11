@@ -41,5 +41,5 @@
     <button type="submit" class="btn btn-success">Stats !</button>
   </form>
 </body>
-
+<!-- Copyrights VITOUX Quentin Jan. 2022 -->
 </html>
