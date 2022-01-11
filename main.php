@@ -93,6 +93,9 @@ function parsedRows($rows)
   foreach ($rows as $r) {
     // Explode to separate date and hour
     $temp = explode(' ', $r['0']);
+    if (sizeof($temp) == 1) {
+      $temp[1] = '00:00:00';
+    }
 
     // Parse the row to a new format
     $row = [
