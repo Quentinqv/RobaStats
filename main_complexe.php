@@ -1,12 +1,13 @@
 <?php
-$isXls = substr($_FILES['file']['name'], -3) == "xls" ? true : false;
+$isXls = substr($_FILES['file_complexe']['name'], -3) == "xls" ? true : false;
 if ($isXls) {
   require_once __DIR__ . '/SimpleXLS.php';
-  $file = $_FILES['file']['tmp_name'];
+  $file = $_FILES['file_complexe']['tmp_name'];
   $xlsx = SimpleXLS::parse($file);
 } else {
   require_once __DIR__ . '/SimpleXLSX.php';
-  $file = $_FILES['file']['tmp_name'];
+  $file = $_FILES['file_complexe']['tmp_name'];
+  // $file = './complexe_sheet.xlsx';
   $xlsx = SimpleXLSX::parse($file);
 }
 
@@ -79,6 +80,9 @@ $plages = [
 
 $rows = $xlsx->rows();
 unset($rows[0]);
+unset($rows[1]);
+unset($rows[2]);
+unset($rows[3]);
 
 /**
  * Parse rows from .xlsx file to PHP array
@@ -91,7 +95,7 @@ function parsedRows($rows)
   $data = [];
   foreach ($rows as $r) {
     // Explode to separate date and hour
-    $temp = explode(' ', $r['0']);
+    $temp = explode(' ', $r[2]);
     if (sizeof($temp) == 1) {
       $temp[1] = '00:00:00';
     }
@@ -100,9 +104,9 @@ function parsedRows($rows)
     $row = [
       'date' => $temp[0],
       'hour' => $temp[1],
-      'time' => $r[2],
-      'state' => $r[3] == 'Connecté' ? true : false,
-      'num'   => $r[1],
+      'time' => $r[4],
+      'state' => $r[11] == 'Répondu' ? true : false,
+      'num'   => $r[6],
     ];
 
     // Save this row to $data
@@ -117,10 +121,7 @@ function avgTime($data)
   $temp = $data;
   $totalTime = 0;
   foreach ($temp as $key => $value) {
-    $explode = explode('min', $temp[$key]['time']);
-    $explode[1] = str_replace('s', '', $explode[1]);
-    $time = $explode[0] * 60 + $explode[1];
-
+    $time = $value['time'] == '' ? 0 : $value['time'];
     $totalTime += $time;
   }
 
