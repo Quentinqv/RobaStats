@@ -1,46 +1,76 @@
 <?php
-require_once __DIR__ . '/SimpleXLSX.php';
-
-$file = $_FILES['file']['tmp_name'];
-$xlsx = SimpleXLSX::parse($file);
+$isXls = substr($_FILES['file']['name'], -3) == "xls" ? true : false;
+if ($isXls) {
+  require_once __DIR__ . '/SimpleXLS.php';
+  $file = $_FILES['file']['tmp_name'];
+  $xlsx = SimpleXLS::parse($file);
+} else {
+  require_once __DIR__ . '/SimpleXLSX.php';
+  $file = $_FILES['file']['tmp_name'];
+  $xlsx = SimpleXLSX::parse($file);
+}
 
 $plages = [
   [
-    'label' => '9h00 - 9h30',
-    'start' => '09:00:00',
-    'end'   => '09:30:00',
+    'label' => '8h30 - 10h00',
+    'start' => '08:30:00',
+    'end'   => '10:00:59',
     'uniqueData'  => [],
     'data'  => [],
     'stats' => [],
   ],
   [
-    'label' => '9h30 - 10h00',
-    'start' => '09:30:00',
-    'end'   => '10:00:00',
+    'label' => '10h01 - 11h30',
+    'start' => '10:01:00',
+    'end'   => '11:30:59',
     'uniqueData'  => [],
     'data'  => [],
     'stats' => [],
   ],
   [
-    'label' => '10h00 - 10h30',
-    'start' => '10:00:00',
-    'end'   => '09:30:00',
+    'label' => '11h31 - 13h00',
+    'start' => '11:31:00',
+    'end'   => '13:00:59',
     'uniqueData'  => [],
     'data'  => [],
     'stats' => [],
   ],
   [
-    'label' => '10h30 - 11h00',
-    'start' => '10:30:00',
-    'end'   => '11:00:00',
+    'label' => '13h01 - 14h00',
+    'start' => '13:01:00',
+    'end'   => '14:00:59',
     'uniqueData'  => [],
     'data'  => [],
     'stats' => [],
   ],
   [
-    'label' => '11h00 - 11h30',
-    'start' => '11:00:00',
-    'end'   => '11:30:00',
+    'label' => '14h01 - 15h30',
+    'start' => '14:01:00',
+    'end'   => '15:30:59',
+    'uniqueData'  => [],
+    'data'  => [],
+    'stats' => [],
+  ],
+  [
+    'label' => '15h31 - 17h00',
+    'start' => '15:31:00',
+    'end'   => '17:00:59',
+    'uniqueData'  => [],
+    'data'  => [],
+    'stats' => [],
+  ],
+  [
+    'label' => '17h01 - 18h30',
+    'start' => '17:01:00',
+    'end'   => '18:30:59',
+    'uniqueData'  => [],
+    'data'  => [],
+    'stats' => [],
+  ],
+  [
+    'label' => '18h31 - 19h00',
+    'start' => '18:31:00',
+    'end'   => '19:00:59',
     'uniqueData'  => [],
     'data'  => [],
     'stats' => [],
@@ -49,6 +79,7 @@ $plages = [
 
 $rows = $xlsx->rows();
 unset($rows[0]);
+
 
 /**
  * Parse rows from .xlsx file to PHP array
@@ -91,7 +122,11 @@ function avgTime($data)
     $totalTime += $time;
   }
 
-  $t = round($totalTime / sizeof($temp));
+  if (sizeof($temp) == 0) {
+    $t = 0;
+  } else {
+    $t = round($totalTime / sizeof($temp));
+  }
   $avgTime = sprintf('%02dh%02dmin%02ds', ($t / 3600), ($t / 60 % 60), $t % 60);
   $avgTime = substr($avgTime, 3);
 
@@ -108,7 +143,7 @@ function getStats($rows, $plages)
 {
   foreach ($rows as $keyRow => $row) {
     foreach ($plages as $key => $value) {
-      if ($value['start'] <= $row['hour'] && $value['end'] > $row['hour']) {
+      if ($value['start'] <= $row['hour'] && $value['end'] >= $row['hour']) {
         $plages[$key]['data'][] = $row;
 
         $isExist = array_filter($plages[$key]['uniqueData'], function ($e) use ($row) {
@@ -127,9 +162,11 @@ function getStats($rows, $plages)
     return $e['state'] == true;
   }));
   $nbTotalUnique = 0;
+  $nbTotalDansPlage = 0;
 
   foreach ($plages as $key => $value) {
     $plages[$key]['stats']['nb'] = sizeof($plages[$key]['data']);
+    $nbTotalDansPlage+=$plages[$key]['stats']['nb'];
     $plages[$key]['stats']['nbUnique'] = sizeof($plages[$key]['uniqueData']);
     $nbTotalUnique+=$plages[$key]['stats']['nbUnique'];
     $plages[$key]['stats']['nbSuccess'] = sizeof(array_filter($plages[$key]['data'], function ($e) {
@@ -149,6 +186,7 @@ function getStats($rows, $plages)
       'nbTotalSuccess'  => $nbTotalSuccess,
       'nbTotalUnique'  => $nbTotalUnique,
       'nbTotalPercentage'  => $nbTotalPercentage,
+      'nbTotalDansPlages'   => $nbTotalDansPlage,
     ],
   ];
 }
@@ -174,7 +212,7 @@ foreach ($parsedRows as $key => $value) {
 </head>
 <style>
   body {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -215,15 +253,16 @@ foreach ($parsedRows as $key => $value) {
     </table>
     <table class="table table-striped table-hover">
       <thead>
-        <th>Horaires</th>
+        <th>Global</th>
         <th>Nb d'appel</th>
+        <th>Nb dans plages</th>
         <th>Nb d'appel unique</th>
         <th>% de réponse</th>
         <th>Temps moyen d'appel</th>
       </thead>
       <tbody>
         <?php
-          echo ("<tr><td>Total</td><td>" . $stats['stats']['nbTotal'] . "</td><td>" . $stats['stats']['nbTotalUnique'] . "</td><td>" . $stats['stats']['nbTotalPercentage'] . " %</td><td>" . $avgTime . "</td></tr>");
+          echo ("<tr><td>Total</td><td>" . $stats['stats']['nbTotal'] . "</td><td>" . $stats['stats']['nbTotalDansPlages'] . "</td><td>" . $stats['stats']['nbTotalUnique'] . "</td><td>" . $stats['stats']['nbTotalPercentage'] . " %</td><td>" . $avgTime . "</td></tr>");
         ?>
       </tbody>
     </table>
