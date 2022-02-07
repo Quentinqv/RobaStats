@@ -40,6 +40,13 @@
     </div>
     <button type="submit" class="btn btn-success">Stats !</button>
   </form>
+  <form action="main_allcentres.php" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="file_allcentres" class="form-label">Choisir un fichier généré manuellement par Kertel contenant tous les centres (.xlsx)</label>
+      <input class="form-control" type="file" name="file_allcentres" id="file_allcentres">
+    </div>
+    <button type="submit" class="btn btn-success">Stats !</button>
+  </form>
 </body>
 <!-- Copyrights VITOUX Quentin Jan. 2022 -->
 </html>
