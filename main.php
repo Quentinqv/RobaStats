@@ -90,23 +90,25 @@ function parsedRows($rows)
 {
   $data = [];
   foreach ($rows as $r) {
-    // Explode to separate date and hour
-    $temp = explode(' ', $r['0']);
-    if (sizeof($temp) == 1) {
-      $temp[1] = '00:00:00';
+    if ($r[1] != '' && $r[1] != '3008') {
+      // Explode to separate date and hour
+      $temp = explode(' ', $r['0']);
+      if (sizeof($temp) == 1) {
+        $temp[1] = '00:00:00';
+      }
+  
+      // Parse the row to a new format
+      $row = [
+        'date' => $temp[0],
+        'hour' => $temp[1],
+        'time' => $r[2],
+        'state' => $r[3] == 'Connecté' ? true : false,
+        'num'   => $r[1],
+      ];
+  
+      // Save this row to $data
+      $data[] = $row;
     }
-
-    // Parse the row to a new format
-    $row = [
-      'date' => $temp[0],
-      'hour' => $temp[1],
-      'time' => $r[2],
-      'state' => $r[3] == 'Connecté' ? true : false,
-      'num'   => $r[1],
-    ];
-
-    // Save this row to $data
-    $data[] = $row;
   }
 
   return $data;
@@ -118,8 +120,8 @@ function avgTime($data)
   $totalTime = 0;
   foreach ($temp as $key => $value) {
     $explode = explode('min', $temp[$key]['time']);
-    $explode[1] = str_replace('s', '', $explode[1]);
-    $time = $explode[0] * 60 + $explode[1];
+    (int)$explode[1] = str_replace('s', '', $explode[1]);
+    (int)$time = (int)$explode[0] * 60 + (int)$explode[1];
 
     $totalTime += $time;
   }
